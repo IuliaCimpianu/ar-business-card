@@ -4,17 +4,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
   <title>AR Business Card - Talking Avatar</title>
 
   <!-- A-Frame -->
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
 
   <!-- AR.js -->
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/three.js/build/aframe-ar.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar.js"></script>
 
-  <!-- A-Frame Extras: skeletal animation support -->
+  <!-- A-Frame Extras -->
   <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
 
   <style>
@@ -22,51 +22,78 @@
       box-sizing: border-box;
     }
 
-    body {
+    html, body {
+      width: 100%;
+      height: 100%;
       margin: 0;
+      padding: 0;
       overflow: hidden;
-      font-family: Arial, sans-serif;
       background: #000;
+      font-family: Arial, sans-serif;
     }
 
+    a-scene {
+      position: fixed !important;
+      inset: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 1;
+    }
+
+    /* Camera video */
+    video {
+      position: fixed !important;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover;
+      z-index: -2;
+    }
+
+    /* Start overlay */
     #overlay-screen {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.97);
       display: flex;
       flex-direction: column;
-      align-items: center;
       justify-content: center;
-      z-index: 99999;
-      color: white;
+      align-items: center;
       text-align: center;
-      padding: 20px;
+      padding: 25px;
+      color: white;
+      background: rgba(15, 23, 42, 0.97);
+      z-index: 99999;
       transition: opacity 0.5s ease;
     }
 
     #overlay-screen h2 {
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+      font-size: 25px;
     }
 
     #overlay-screen p {
-      color: #94a3b8;
+      color: #cbd5e1;
       max-width: 320px;
-      font-size: 0.95rem;
-      line-height: 1.5;
-      margin-bottom: 24px;
+      line-height: 1.6;
+      margin-bottom: 25px;
     }
 
     .btn-start {
+      border: none;
+      border-radius: 10px;
+      padding: 16px 30px;
       background: #3b82f6;
       color: white;
-      border: none;
-      padding: 15px 30px;
-      font-size: 1rem;
       font-weight: bold;
-      border-radius: 8px;
+      font-size: 16px;
       cursor: pointer;
     }
 
+    .btn-start:disabled {
+      opacity: 0.6;
+    }
+
+    /* Status */
     #status-toast {
       position: fixed;
       bottom: 25px;
@@ -74,11 +101,13 @@
       transform: translateX(-50%);
       background: rgba(0, 0, 0, 0.85);
       color: white;
-      padding: 12px 22px;
-      border-radius: 50px;
-      font-size: 14px;
-      white-space: nowrap;
+      padding: 13px 20px;
+      border-radius: 30px;
+      font-size: 13px;
+      text-align: center;
       z-index: 9999;
+      width: max-content;
+      max-width: 90%;
       pointer-events: none;
     }
 
@@ -87,26 +116,63 @@
     }
   </style>
 
-  <!-- Register lip-sync component BEFORE the AR scene loads -->
+  <!-- AUDIO AND LIP SYNC COMPONENT -->
   <script>
     let audioContext = null;
     let audioAnalyser = null;
-    let audioData = null;
     let audioSource = null;
+    let audioData = null;
     let audioUnlocked = false;
+
+    function initializeAudio() {
+
+      if (audioContext) return;
+
+      const audio = document.getElementById('voice-audio');
+
+      const AudioContextClass =
+        window.AudioContext || window.webkitAudioContext;
+
+      if (!AudioContextClass) {
+        console.warn('Web Audio API unavailable');
+        return;
+      }
+
+      try {
+        audioContext = new AudioContextClass();
+
+        audioSource =
+          audioContext.createMediaElementSource(audio);
+
+        audioAnalyser = audioContext.createAnalyser();
+
+        audioAnalyser.fftSize = 64;
+
+        audioData = new Uint8Array(
+          audioAnalyser.frequencyBinCount
+        );
+
+        audioSource.connect(audioAnalyser);
+        audioAnalyser.connect(audioContext.destination);
+
+      } catch (error) {
+        console.error('Audio initialization error:', error);
+      }
+    }
 
     AFRAME.registerComponent('web-audio-lipsync', {
 
       init: function () {
+
         this.mouthMeshes = [];
 
         this.el.addEventListener('model-loaded', () => {
 
-          const root = this.el.getObject3D('mesh');
+          const model = this.el.getObject3D('mesh');
 
-          if (!root) return;
+          if (!model) return;
 
-          root.traverse((node) => {
+          model.traverse((node) => {
 
             if (
               node.isMesh &&
@@ -118,15 +184,21 @@
 
           });
 
-          initializeAudio();
+          console.log(
+            'Lip sync meshes found:',
+            this.mouthMeshes.length
+          );
 
         });
       },
 
       tick: function () {
 
-        if (!audioAnalyser || !audioData ||
-            this.mouthMeshes.length === 0) return;
+        if (
+          !audioAnalyser ||
+          !audioData ||
+          this.mouthMeshes.length === 0
+        ) return;
 
         audioAnalyser.getByteFrequencyData(audioData);
 
@@ -143,63 +215,23 @@
 
         this.mouthMeshes.forEach((mesh) => {
 
-          const dict = mesh.morphTargetDictionary;
+          const dictionary = mesh.morphTargetDictionary;
           const influences = mesh.morphTargetInfluences;
 
-          if (dict.jawOpen !== undefined) {
-            influences[dict.jawOpen] = volume;
+          if (dictionary.jawOpen !== undefined) {
+            influences[dictionary.jawOpen] = volume;
           }
 
-          if (dict.mouthOpen !== undefined) {
-            influences[dict.mouthOpen] = volume * 0.8;
+          if (dictionary.mouthOpen !== undefined) {
+            influences[dictionary.mouthOpen] =
+              volume * 0.8;
           }
 
         });
       }
     });
-
-    function initializeAudio() {
-
-      if (audioContext) return;
-
-      const audio = document.getElementById('voice-audio');
-
-      if (!audio) return;
-
-      try {
-
-        const AudioContextClass =
-          window.AudioContext || window.webkitAudioContext;
-
-        if (!AudioContextClass) {
-          console.warn('Web Audio API is not supported.');
-          return;
-        }
-
-        audioContext = new AudioContextClass();
-
-        audioSource = audioContext.createMediaElementSource(audio);
-
-        audioAnalyser = audioContext.createAnalyser();
-
-        audioAnalyser.fftSize = 64;
-
-        audioData = new Uint8Array(
-          audioAnalyser.frequencyBinCount
-        );
-
-        audioSource.connect(audioAnalyser);
-        audioAnalyser.connect(audioContext.destination);
-
-        if (audioUnlocked) {
-          audioContext.resume();
-        }
-
-      } catch (error) {
-        console.error('Audio initialization failed:', error);
-      }
-    }
   </script>
+
 </head>
 
 <body>
@@ -210,8 +242,8 @@
     <h2>AR Business Experience</h2>
 
     <p>
-      Allow camera and audio access to experience
-      your interactive animated business card.
+      Welcome! Tap below to activate your camera
+      and audio, then scan your business card.
     </p>
 
     <button class="btn-start" id="btn-activate">
@@ -222,10 +254,10 @@
 
   <!-- STATUS MESSAGE -->
   <div id="status-toast">
-    Scan your business card marker...
+    Waiting for camera...
   </div>
 
-  <!-- AUDIO -->
+  <!-- VOICE AUDIO -->
   <audio
     id="voice-audio"
     src="assets/voice.mp3"
@@ -238,9 +270,16 @@
     embedded
     vr-mode-ui="enabled: false"
     renderer="antialias: true; alpha: true"
-    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_matrix;">
+    arjs="
+      sourceType: webcam;
+      videoTexture: true;
+      debugUIEnabled: false;
+      detectionMode: mono_matrix;
+      trackingMethod: best;
+    ">
 
-    <a-assets>
+    <!-- ASSETS -->
+    <a-assets timeout="15000">
 
       <a-asset-item
         id="avatar-model"
@@ -249,21 +288,20 @@
 
     </a-assets>
 
-    <!-- BUSINESS CARD MARKER -->
+    <!-- MARKER -->
     <a-marker
       id="business-card-marker"
       type="pattern"
       url="assets/custom-logo.patt"
-      size="0.08"
       emitevents="true">
 
-      <!-- 3D AVATAR --> 
+      <!-- AVATAR -->
       <a-entity
         id="business-avatar"
         gltf-model="#avatar-model"
         position="0 0 0"
-        rotation="-90 0 0"
-        scale="0.04 0.04 0.04"
+        rotation="0 0 0"
+        scale="0.05 0.05 0.05"
         animation-mixer
         web-audio-lipsync>
       </a-entity>
@@ -275,25 +313,48 @@
 
   </a-scene>
 
+  <!-- APPLICATION SCRIPT -->
   <script>
-    const overlay = document.getElementById('overlay-screen');
-    const startButton = document.getElementById('btn-activate');
-    const statusToast = document.getElementById('status-toast');
-    const audioTrack = document.getElementById('voice-audio');
-    const marker = document.getElementById('business-card-marker');
+
+    const overlay =
+      document.getElementById('overlay-screen');
+
+    const startButton =
+      document.getElementById('btn-activate');
+
+    const statusToast =
+      document.getElementById('status-toast');
+
+    const audioTrack =
+      document.getElementById('voice-audio');
+
+    const marker =
+      document.getElementById('business-card-marker');
+
+    const scene =
+      document.querySelector('a-scene');
 
     let markerVisible = false;
+    let appStarted = false;
 
-    // USER ACTIVATION
+    function updateStatus(message, color) {
+
+      statusToast.innerText = message;
+
+      statusToast.style.background =
+        color || 'rgba(0,0,0,0.85)';
+    }
+
+    // START APPLICATION
     startButton.addEventListener('click', async () => {
 
+      if (appStarted) return;
+
+      appStarted = true;
       audioUnlocked = true;
 
-      overlay.style.opacity = '0';
-
-      setTimeout(() => {
-        overlay.classList.add('hidden');
-      }, 500);
+      startButton.disabled = true;
+      startButton.innerText = 'STARTING CAMERA...';
 
       initializeAudio();
 
@@ -301,24 +362,100 @@
         try {
           await audioContext.resume();
         } catch (error) {
-          console.warn('Audio context resume failed:', error);
+          console.warn('Audio resume:', error);
         }
       }
 
-      // Start immediately if marker was already detected
-      if (markerVisible) {
-        playVoice();
+      updateStatus('Starting camera...');
+
+      // Wait for scene initialization
+      if (!scene.hasLoaded) {
+        await new Promise(resolve => {
+          scene.addEventListener('loaded', resolve, {
+            once: true
+          });
+        });
       }
+
+      // Hide overlay after initialization
+      overlay.style.opacity = '0';
+
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+      }, 500);
+
     });
 
-    // PLAY VOICE
+    // CAMERA INITIALIZED
+    scene.addEventListener('camera-init', () => {
+
+      console.log('Camera initialized');
+
+      updateStatus(
+        'Camera active! Scan your business card.',
+        'rgba(16,185,129,0.9)'
+      );
+
+    });
+
+    // CAMERA ERROR
+    scene.addEventListener('camera-error', (event) => {
+
+      console.error('Camera error:', event);
+
+      updateStatus(
+        'Camera error. Check browser permissions.',
+        'rgba(220,38,38,0.95)'
+      );
+
+      startButton.disabled = false;
+      startButton.innerText = 'TRY AGAIN';
+
+      overlay.classList.remove('hidden');
+      overlay.style.opacity = '1';
+
+      appStarted = false;
+
+    });
+
+    // MARKER DETECTED
+    marker.addEventListener('markerFound', () => {
+
+      markerVisible = true;
+
+      updateStatus(
+        '⚡ Business Card Detected!',
+        'rgba(16,185,129,0.95)'
+      );
+
+      playVoice();
+
+    });
+
+    // MARKER LOST
+    marker.addEventListener('markerLost', () => {
+
+      markerVisible = false;
+
+      updateStatus(
+        'Scan your business card marker...',
+        'rgba(0,0,0,0.85)'
+      );
+
+      audioTrack.pause();
+
+    });
+
+    // PLAY AUDIO
     async function playVoice() {
 
       if (!audioUnlocked || !markerVisible) return;
 
       try {
 
-        if (audioContext && audioContext.state === 'suspended') {
+        if (audioContext &&
+            audioContext.state === 'suspended') {
+
           await audioContext.resume();
         }
 
@@ -327,51 +464,61 @@
         }
 
       } catch (error) {
-        console.warn('Audio playback failed:', error);
-        statusToast.innerText = 'Tap ENTER AR SCENE to enable audio';
+
+        console.error('Audio playback error:', error);
+
+        updateStatus(
+          'Tap to enable audio playback.',
+          'rgba(220,38,38,0.9)'
+        );
+
       }
     }
 
-    // MARKER FOUND
-    marker.addEventListener('markerFound', () => {
-
-      markerVisible = true;
-
-      statusToast.innerText = '⚡ Business Card Tracked!';
-      statusToast.style.background = 'rgba(16, 185, 129, 0.95)';
-
-      playVoice();
-    });
-
-    // MARKER LOST
-    marker.addEventListener('markerLost', () => {
-
-      markerVisible = false;
-
-      statusToast.innerText = 'Scan your business card marker...';
-      statusToast.style.background = 'rgba(0, 0, 0, 0.85)';
-
-      audioTrack.pause();
-
-    });
-
-    // AUDIO ERROR HANDLING
+    // AUDIO FILE ERROR
     audioTrack.addEventListener('error', () => {
-      console.error('Unable to load voice.mp3:', audioTrack.error);
-      statusToast.innerText = 'Audio file could not be loaded';
+
+      console.error(
+        'Voice file failed:',
+        audioTrack.error
+      );
+
     });
 
-    // MODEL ERROR HANDLING
-    document.getElementById('business-avatar')
+    // AVATAR MODEL ERROR
+    document
+      .getElementById('business-avatar')
       .addEventListener('model-error', (event) => {
-        console.error('Avatar model failed to load:', event);
+
+        console.error('Avatar loading error:', event);
+
       });
 
-    // SCENE ERROR HANDLING
-    document.querySelector('a-scene')
-      .addEventListener('arjs-video-error', () => {
-        statusToast.innerText = 'Camera unavailable. Check permissions.';
-      });
+    // SCENE ERROR
+    scene.addEventListener('arjs-video-error', (event) => {
+
+      console.error('AR video error:', event);
+
+      updateStatus(
+        'Unable to access camera.',
+        'rgba(220,38,38,0.95)'
+      );
+
+    });
+
+    // CHECK CAMERA SUPPORT
+    if (!window.isSecureContext) {
+
+      updateStatus(
+        'HTTPS required for camera access.',
+        'rgba(220,38,38,0.95)'
+      );
+
+      console.error('Page is not running in a secure context');
+
+    }
+
+    console.log('AR Business Card application loaded');
 
   </script>
 
