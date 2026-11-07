@@ -5,16 +5,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>QR AR Business Card - Talking Avatar</title>
+  <title>QR AR Business Experience</title>
 
-  <!-- A-FRAME -->
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
 
-  <!-- ANIMATION SUPPORT -->
-  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
+  <!-- MindAR Image Tracking -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
-  <!-- QR CODE DETECTION -->
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <!-- GLB Animations -->
+  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
 
   <style>
     * {
@@ -31,29 +31,14 @@
       font-family: Arial, sans-serif;
     }
 
-    /* CAMERA */
-    #camera-feed {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 0;
-      background: #000;
-    }
-
-    /* AR SCENE */
     a-scene {
       position: fixed !important;
       inset: 0;
       width: 100%;
       height: 100%;
       z-index: 1;
-      background: transparent !important;
-      pointer-events: none;
     }
 
-    /* START SCREEN */
     #overlay-screen {
       position: fixed;
       inset: 0;
@@ -62,34 +47,33 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 40px;
+      padding: 30px;
       text-align: center;
       color: white;
       background: rgba(15, 23, 42, 0.97);
       transition: opacity 0.5s ease;
     }
 
-    #overlay-screen h2 {
+    #overlay-screen h1 {
       font-size: clamp(34px, 5vw, 48px);
-      line-height: 1.15;
-      margin-bottom: 22px;
+      margin-bottom: 20px;
     }
 
     #overlay-screen p {
       max-width: 560px;
       color: #cbd5e1;
-      font-size: clamp(19px, 2.5vw, 24px);
+      font-size: 20px;
       line-height: 1.7;
-      margin-bottom: 40px;
+      margin-bottom: 35px;
     }
 
     .btn-start {
-      padding: 24px 48px;
+      padding: 22px 45px;
       border: none;
-      border-radius: 16px;
+      border-radius: 14px;
       background: #3b82f6;
       color: white;
-      font-size: 22px;
+      font-size: 20px;
       font-weight: bold;
       cursor: pointer;
     }
@@ -98,103 +82,61 @@
       opacity: 0.6;
     }
 
-    /* STATUS */
     #status-toast {
       position: fixed;
-      bottom: 35px;
+      bottom: 30px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 9999;
       width: max-content;
       max-width: 92%;
-      padding: 20px 32px;
+      padding: 17px 27px;
       background: rgba(0, 0, 0, 0.85);
       color: white;
       border-radius: 40px;
       text-align: center;
-      font-size: 19px;
+      font-size: 17px;
       line-height: 1.4;
       pointer-events: none;
-    }
-
-    /* QR SCANNER */
-    #scanner-frame {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: min(78vw, 360px);
-      height: min(78vw, 360px);
-      border: 5px solid #3b82f6;
-      border-radius: 28px;
-      z-index: 10;
-      pointer-events: none;
-      transition: opacity 0.3s;
-    }
-
-    #scanner-frame::before,
-    #scanner-frame::after {
-      content: "";
-      position: absolute;
-      width: 36px;
-      height: 36px;
-      border-color: white;
-      border-style: solid;
-    }
-
-    #scanner-frame::before {
-      top: -5px;
-      left: -5px;
-      border-width: 5px 0 0 5px;
-      border-radius: 12px 0 0 0;
-    }
-
-    #scanner-frame::after {
-      bottom: -5px;
-      right: -5px;
-      border-width: 0 5px 5px 0;
-      border-radius: 0 0 12px 0;
     }
 
     .hidden {
       display: none !important;
     }
 
-    /* MOBILE */
     @media (max-width: 600px) {
       #overlay-screen {
-        padding: 28px;
+        padding: 25px;
       }
 
-      #overlay-screen h2 {
+      #overlay-screen h1 {
         font-size: 34px;
       }
 
       #overlay-screen p {
-        font-size: 19px;
+        font-size: 18px;
       }
 
       .btn-start {
-        width: min(100%, 340px);
-        padding: 22px 24px;
-        font-size: 19px;
+        width: 100%;
+        max-width: 340px;
+        padding: 21px;
+        font-size: 18px;
       }
 
       #status-toast {
         bottom: 20px;
-        font-size: 16px;
-        padding: 16px 22px;
-      }
-
-      #scanner-frame {
-        width: min(82vw, 360px);
-        height: min(82vw, 360px);
+        font-size: 15px;
+        padding: 15px 20px;
       }
     }
   </style>
 
-  <!-- AUDIO AND LIP SYNC -->
   <script>
+    // ==========================================
+    // AUDIO AND LIP SYNC
+    // ==========================================
+
     let audioContext = null;
     let audioAnalyser = null;
     let audioSource = null;
@@ -203,16 +145,12 @@
     function initializeAudio() {
       if (audioContext) return;
 
-      const audio = document.getElementById('voice-audio');
+      const audio = document.getElementById("voice-audio");
 
       const AudioContextClass =
-        window.AudioContext ||
-        window.webkitAudioContext;
+        window.AudioContext || window.webkitAudioContext;
 
-      if (!AudioContextClass) {
-        console.warn('Web Audio API unavailable');
-        return;
-      }
+      if (!AudioContextClass) return;
 
       try {
         audioContext = new AudioContextClass();
@@ -232,25 +170,29 @@
         audioSource.connect(audioAnalyser);
         audioAnalyser.connect(audioContext.destination);
 
-        console.log('Audio initialized');
-
       } catch (error) {
-        console.error('Audio initialization error:', error);
+        console.error("Audio initialization error:", error);
       }
     }
 
-    /* LIP SYNC COMPONENT */
-    AFRAME.registerComponent('web-audio-lipsync', {
+    // ==========================================
+    // AVATAR LIP SYNC COMPONENT
+    // ==========================================
+
+    AFRAME.registerComponent("web-audio-lipsync", {
 
       init: function () {
+
         this.mouthMeshes = [];
 
-        this.el.addEventListener('model-loaded', () => {
-          const model = this.el.getObject3D('mesh');
+        this.el.addEventListener("model-loaded", () => {
+
+          const model = this.el.getObject3D("mesh");
 
           if (!model) return;
 
-          model.traverse((node) => {
+          model.traverse(node => {
+
             if (
               node.isMesh &&
               node.morphTargetInfluences &&
@@ -258,21 +200,27 @@
             ) {
               this.mouthMeshes.push(node);
             }
+
           });
 
           console.log(
-            'Lip sync meshes:',
+            "Lip sync meshes:",
             this.mouthMeshes.length
           );
+
         });
+
       },
 
       tick: function () {
+
         if (
           !audioAnalyser ||
           !audioData ||
           !this.mouthMeshes.length
-        ) return;
+        ) {
+          return;
+        }
 
         audioAnalyser.getByteFrequencyData(audioData);
 
@@ -287,64 +235,58 @@
           (sum / audioData.length / 255) * 2.5
         );
 
-        this.mouthMeshes.forEach((mesh) => {
-          const dict = mesh.morphTargetDictionary;
+        this.mouthMeshes.forEach(mesh => {
+
+          const dictionary = mesh.morphTargetDictionary;
           const influences = mesh.morphTargetInfluences;
 
-          if (dict.jawOpen !== undefined) {
-            influences[dict.jawOpen] = volume;
+          if (dictionary.jawOpen !== undefined) {
+            influences[dictionary.jawOpen] = volume;
           }
 
-          if (dict.mouthOpen !== undefined) {
-            influences[dict.mouthOpen] = volume * 0.8;
+          if (dictionary.mouthOpen !== undefined) {
+            influences[dictionary.mouthOpen] = volume * 0.8;
           }
+
         });
+
       }
+
     });
   </script>
+
 </head>
 
 <body>
 
-  <!-- CAMERA VIDEO -->
-  <video
-    id="camera-feed"
-    autoplay
-    muted
-    playsinline>
-  </video>
+  <!-- ======================================
+       START SCREEN
+  ======================================= -->
 
-  <!-- QR SCANNER FRAME -->
-  <div id="scanner-frame"></div>
-
-  <!-- START SCREEN -->
   <div id="overlay-screen">
 
-    <h2>AR Business Experience</h2>
+    <h1>AR Business Experience</h1>
 
     <p>
-      Welcome!
-
-      Tap below to activate your camera.
-
-      Scan your QR code to meet your
-      interactive talking avatar.
+      Welcome! Tap below to activate your camera.
+      Point your camera at the QR code to meet
+      your interactive talking avatar.
     </p>
 
-    <button
-      class="btn-start"
-      id="btn-activate">
-      ENTER AR SCENE
+    <button class="btn-start" id="btn-activate">
+      ENTER AR EXPERIENCE
     </button>
 
   </div>
 
-  <!-- STATUS -->
+  <!-- STATUS MESSAGE -->
+
   <div id="status-toast">
-    Waiting for camera...
+    Ready to start your AR experience
   </div>
 
   <!-- AUDIO -->
+
   <audio
     id="voice-audio"
     src="assets/voice.mp3"
@@ -352,102 +294,149 @@
     playsinline>
   </audio>
 
-  <!-- QR SCAN CANVAS -->
-  <canvas id="qr-canvas" hidden></canvas>
 
-  <!-- AR SCENE -->
+  <!-- ======================================
+       MINDAR AR SCENE
+  ======================================= -->
+
   <a-scene
+    id="ar-scene"
+
+    mindar-image="
+      imageTargetSrc: assets/qr-code.mind;
+      autoStart: false;
+      uiScanning: no;
+      uiLoading: no;
+      uiError: no;
+    "
+
     embedded
-    vr-mode-ui="enabled: false"
+
+    color-space="sRGB"
+
     renderer="
+      colorManagement: true;
+      physicallyCorrectLights: true;
       antialias: true;
       alpha: true;
-    ">
+    "
 
-    <!-- ASSETS -->
+    vr-mode-ui="enabled: false"
+
+    device-orientation-permission-ui="enabled: false"
+  >
+
     <a-assets timeout="15000">
+
       <a-asset-item
         id="avatar-model"
         src="assets/avatar.glb">
       </a-asset-item>
+
     </a-assets>
 
-    <!-- CAMERA -->
-    <a-entity camera="fov: 60">
+
+    <!-- QR CODE TRACKING TARGET -->
+
+    <a-entity
+      id="qr-anchor"
+      mindar-image-target="targetIndex: 0"
+    >
 
       <!-- AVATAR -->
+
       <a-entity
         id="business-avatar"
+
         gltf-model="#avatar-model"
-        position="0 -0.25 -1.2"
+
+        position="0 0.35 0.1"
+
         rotation="0 0 0"
+
         scale="0.25 0.25 0.25"
+
         animation-mixer
+
         web-audio-lipsync
-        visible="false">
+
+        visible="true"
+      >
       </a-entity>
 
     </a-entity>
 
+
+    <!-- CAMERA -->
+
+    <a-camera
+      position="0 0 0"
+      look-controls="enabled: false"
+    >
+    </a-camera>
+
   </a-scene>
 
-  <!-- APPLICATION -->
+
+  <!-- ======================================
+       JAVASCRIPT
+  ======================================= -->
+
   <script>
 
     const overlay =
-      document.getElementById('overlay-screen');
+      document.getElementById("overlay-screen");
 
     const startButton =
-      document.getElementById('btn-activate');
+      document.getElementById("btn-activate");
 
     const statusToast =
-      document.getElementById('status-toast');
+      document.getElementById("status-toast");
 
     const audioTrack =
-      document.getElementById('voice-audio');
+      document.getElementById("voice-audio");
 
-    const cameraFeed =
-      document.getElementById('camera-feed');
+    const scene =
+      document.getElementById("ar-scene");
+
+    const anchor =
+      document.getElementById("qr-anchor");
 
     const avatar =
-      document.getElementById('business-avatar');
+      document.getElementById("business-avatar");
 
-    const scannerFrame =
-      document.getElementById('scanner-frame');
 
-    const qrCanvas =
-      document.getElementById('qr-canvas');
+    let sceneStarted = false;
+    let voicePlayed = false;
 
-    const qrContext =
-      qrCanvas.getContext('2d', {
-        willReadFrequently: true
-      });
 
-    let cameraStream = null;
-    let cameraStarted = false;
-    let qrScanning = false;
-    let qrDetected = false;
-    let sceneActivated = false;
+    // ======================================
+    // STATUS MESSAGE
+    // ======================================
 
-    /* STATUS */
     function setStatus(message, color) {
+
       statusToast.textContent = message;
 
       statusToast.style.background =
-        color || 'rgba(0,0,0,0.85)';
+        color || "rgba(0,0,0,0.85)";
+
     }
 
-    /* START CAMERA */
-    startButton.addEventListener('click', async () => {
 
-      if (cameraStarted) return;
+    // ======================================
+    // START AR CAMERA
+    // ======================================
+
+    startButton.addEventListener("click", async () => {
+
+      if (sceneStarted) return;
 
       startButton.disabled = true;
 
-      startButton.textContent =
-        'STARTING CAMERA...';
+      startButton.textContent = "STARTING CAMERA...";
 
-      setStatus('Requesting camera access...');
+      setStatus("Requesting camera access...");
 
       try {
 
@@ -457,216 +446,106 @@
           await audioContext.resume();
         }
 
-        /* REQUEST REAR CAMERA */
-        try {
+        await scene.systems["mindar-image-system"].start();
 
-          cameraStream =
-            await navigator.mediaDevices.getUserMedia({
+        sceneStarted = true;
 
-              audio: false,
-
-              video: {
-                facingMode: {
-                  ideal: 'environment'
-                },
-
-                width: {
-                  ideal: 1280
-                },
-
-                height: {
-                  ideal: 720
-                }
-              }
-
-            });
-
-        } catch (cameraError) {
-
-          console.warn(
-            'Rear camera unavailable. Trying default camera.',
-            cameraError
-          );
-
-          cameraStream =
-            await navigator.mediaDevices.getUserMedia({
-
-              audio: false,
-              video: true
-
-            });
-
-        }
-
-        cameraFeed.srcObject = cameraStream;
-
-        await cameraFeed.play();
-
-        cameraStarted = true;
-
-        overlay.style.opacity = '0';
+        overlay.style.opacity = "0";
 
         setTimeout(() => {
-          overlay.classList.add('hidden');
+          overlay.classList.add("hidden");
         }, 500);
 
-        scannerFrame.classList.remove('hidden');
-
         setStatus(
-          'Camera active! Scan your QR code.',
-          'rgba(16,185,129,0.95)'
+          "Camera active! Point it at your QR code.",
+          "rgba(16,185,129,0.95)"
         );
-
-        qrScanning = true;
-
-        scanQRCode();
 
       } catch (error) {
 
-        console.error('Camera error:', error);
+        console.error("AR startup error:", error);
 
         setStatus(
-          'Camera access failed. Check permissions and HTTPS.',
-          'rgba(220,38,38,0.95)'
+          "Unable to start camera. Check permissions and HTTPS.",
+          "rgba(220,38,38,0.95)"
         );
 
         startButton.disabled = false;
 
-        startButton.textContent = 'TRY AGAIN';
+        startButton.textContent = "TRY AGAIN";
 
       }
 
     });
 
-    /* QR CODE SCANNER */
-    function scanQRCode() {
 
-      if (!qrScanning) return;
+    // ======================================
+    // QR CODE FOUND
+    // ======================================
 
-      if (
-        cameraFeed.readyState >=
-        HTMLMediaElement.HAVE_ENOUGH_DATA
-      ) {
+    anchor.addEventListener("targetFound", () => {
 
-        const videoWidth = cameraFeed.videoWidth;
-        const videoHeight = cameraFeed.videoHeight;
+      console.log("QR tracking started");
 
-        if (videoWidth && videoHeight) {
+      setStatus(
+        "QR code detected! Welcome!",
+        "rgba(16,185,129,0.95)"
+      );
 
-          const scanWidth = Math.min(videoWidth, 640);
+      avatar.setAttribute("visible", true);
 
-          const scanHeight = Math.round(
-            videoHeight * scanWidth / videoWidth
-          );
+      // Play the introduction once.
+      if (!voicePlayed) {
 
-          qrCanvas.width = scanWidth;
-          qrCanvas.height = scanHeight;
+        voicePlayed = true;
 
-          qrContext.drawImage(
-            cameraFeed,
-            0,
-            0,
-            scanWidth,
-            scanHeight
-          );
-
-          const imageData =
-            qrContext.getImageData(
-              0,
-              0,
-              scanWidth,
-              scanHeight
-            );
-
-          const code = jsQR(
-            imageData.data,
-            imageData.width,
-            imageData.height,
-            {
-              inversionAttempts: 'attemptBoth'
-            }
-          );
-
-          /* QR CODE DETECTED */
-          if (code && !sceneActivated) {
-
-            qrDetected = true;
-            sceneActivated = true;
-
-            onQRCodeFound(code.data);
-
-          }
-
-          /* QR CODE NOT DETECTED */
-          if (!code && qrDetected) {
-
-            qrDetected = false;
-
-            onQRCodeLost();
-
-          }
-
-        }
+        playVoice();
 
       }
 
-      requestAnimationFrame(scanQRCode);
+    });
 
-    }
 
-    /* QR CODE FOUND */
-    function onQRCodeFound(qrContent) {
+    // ======================================
+    // QR CODE LOST
+    // ======================================
 
-      console.log(
-        'QR code detected:',
-        qrContent
-      );
+    anchor.addEventListener("targetLost", () => {
 
-      setStatus(
-        'QR Code Detected! Welcome!',
-        'rgba(16,185,129,0.95)'
-      );
+      console.log("QR tracking temporarily lost");
 
-      /* HIDE SCANNER */
-      scannerFrame.style.opacity = '0';
+      /*
+        Keep the avatar visible.
 
-      scannerFrame.classList.add('hidden');
+        The last tracked position is retained as far
+        as the tracking system allows.
 
-      /* SHOW AVATAR */
-      avatar.setAttribute('visible', true);
+        This is not true world-locked tracking:
+        without seeing the marker, the camera cannot
+        reliably update its physical position.
+      */
 
-      /* PLAY VOICE */
-      playVoice();
-
-    }
-
-    /* QR CODE LOST */
-    function onQRCodeLost() {
-
-      console.log(
-        'QR code no longer visible. Keeping AR scene active.'
-      );
-
-      /* DO NOT HIDE AVATAR */
-      /* DO NOT STOP AUDIO */
-      /* DO NOT RESET AVATAR */
-      /* DO NOT SHOW SCANNER AGAIN */
+      avatar.setAttribute("visible", true);
 
       setStatus(
-        'Your AR experience is active!',
-        'rgba(16,185,129,0.95)'
+        "AR experience active",
+        "rgba(16,185,129,0.95)"
       );
 
-    }
+    });
 
-    /* PLAY VOICE */
+
+    // ======================================
+    // PLAY AVATAR VOICE
+    // ======================================
+
     async function playVoice() {
 
       try {
 
         if (
           audioContext &&
-          audioContext.state === 'suspended'
+          audioContext.state === "suspended"
         ) {
           await audioContext.resume();
         }
@@ -675,115 +554,86 @@
 
         await audioTrack.play();
 
-        console.log('Avatar voice playing');
+        console.log("Avatar voice playing");
 
       } catch (error) {
 
-        console.error(
-          'Audio playback error:',
-          error
-        );
+        console.error("Audio playback error:", error);
 
         setStatus(
-          'Audio playback failed. Check voice.mp3.',
-          'rgba(220,38,38,0.95)'
+          "Audio playback failed. Check voice.mp3.",
+          "rgba(220,38,38,0.95)"
         );
 
       }
 
     }
 
-    /* AUDIO ENDED */
-    audioTrack.addEventListener('ended', () => {
 
-      console.log('Voice finished');
+    // ======================================
+    // AUDIO EVENTS
+    // ======================================
 
-      if (sceneActivated) {
+    audioTrack.addEventListener("ended", () => {
 
-        setStatus(
-          'Enjoy your interactive avatar!',
-          'rgba(16,185,129,0.95)'
-        );
-
-      }
-
-    });
-
-    /* AUDIO ERROR */
-    audioTrack.addEventListener('error', () => {
-
-      console.error(
-        'Voice file loading error:',
-        audioTrack.error
-      );
+      console.log("Voice finished");
 
       setStatus(
-        'Unable to load voice.mp3.',
-        'rgba(220,38,38,0.95)'
+        "Enjoy your interactive avatar!",
+        "rgba(16,185,129,0.95)"
       );
 
     });
 
-    /* AVATAR MODEL LOADED */
-    avatar.addEventListener('model-loaded', () => {
 
-      console.log(
-        'Avatar model loaded successfully'
-      );
+    audioTrack.addEventListener("error", () => {
 
-    });
-
-    /* AVATAR MODEL ERROR */
-    avatar.addEventListener('model-error', (event) => {
-
-      console.error(
-        'Avatar loading error:',
-        event
-      );
+      console.error("Unable to load voice.mp3");
 
       setStatus(
-        'Unable to load avatar.glb.',
-        'rgba(220,38,38,0.95)'
+        "Unable to load voice.mp3.",
+        "rgba(220,38,38,0.95)"
       );
 
     });
 
-    /* ENVIRONMENT DIAGNOSTICS */
-    console.log(
-      'A-Frame version:',
-      AFRAME.version
-    );
 
-    console.log(
-      'QR scanner available:',
-      typeof jsQR !== 'undefined'
-    );
+    // ======================================
+    // MODEL EVENTS
+    // ======================================
 
-    console.log(
-      'HTTPS secure context:',
-      window.isSecureContext
-    );
+    avatar.addEventListener("model-loaded", () => {
 
-    console.log(
-      'Camera API available:',
-      !!(
-        navigator.mediaDevices &&
-        navigator.mediaDevices.getUserMedia
-      )
-    );
+      console.log("Avatar loaded successfully");
 
-    if (!window.isSecureContext) {
+    });
+
+
+    avatar.addEventListener("model-error", event => {
+
+      console.error("Avatar loading error:", event);
 
       setStatus(
-        'HTTPS is required for camera access.',
-        'rgba(220,38,38,0.95)'
+        "Unable to load avatar.glb.",
+        "rgba(220,38,38,0.95)"
       );
 
-    }
+    });
 
-    console.log(
-      'QR AR Business Experience ready'
+
+    // ======================================
+    // DEBUGGING
+    // ======================================
+
+    console.log("A-Frame version:", AFRAME.version);
+
+    console.log("MindAR available:",
+      !!scene.systems["mindar-image-system"]
     );
+
+    console.log("Secure context:", window.isSecureContext);
+
+    console.log("AR Business Experience ready"); 
 
   </script>
 
