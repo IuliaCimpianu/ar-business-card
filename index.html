@@ -1,7 +1,6 @@
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,7 +31,7 @@
       font-family: Arial, sans-serif;
     }
 
-    /* CAMERA VIDEO BACKGROUND */
+    /* CAMERA */
     #camera-feed {
       position: fixed;
       inset: 0;
@@ -63,7 +62,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 25px;
+      padding: 40px;
       text-align: center;
       color: white;
       background: rgba(15, 23, 42, 0.97);
@@ -71,24 +70,26 @@
     }
 
     #overlay-screen h2 {
-      font-size: 26px;
-      margin-bottom: 10px;
+      font-size: clamp(34px, 5vw, 48px);
+      line-height: 1.15;
+      margin-bottom: 22px;
     }
 
     #overlay-screen p {
-      max-width: 320px;
+      max-width: 560px;
       color: #cbd5e1;
-      line-height: 1.6;
-      margin-bottom: 25px;
+      font-size: clamp(19px, 2.5vw, 24px);
+      line-height: 1.7;
+      margin-bottom: 40px;
     }
 
     .btn-start {
-      padding: 16px 30px;
+      padding: 24px 48px;
       border: none;
-      border-radius: 10px;
+      border-radius: 16px;
       background: #3b82f6;
       color: white;
-      font-size: 16px;
+      font-size: 22px;
       font-weight: bold;
       cursor: pointer;
     }
@@ -97,34 +98,35 @@
       opacity: 0.6;
     }
 
-    /* STATUS MESSAGE */
+    /* STATUS */
     #status-toast {
       position: fixed;
-      bottom: 25px;
+      bottom: 35px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 9999;
       width: max-content;
-      max-width: 90%;
-      padding: 13px 20px;
+      max-width: 92%;
+      padding: 20px 32px;
       background: rgba(0, 0, 0, 0.85);
       color: white;
-      border-radius: 30px;
+      border-radius: 40px;
       text-align: center;
-      font-size: 13px;
+      font-size: 19px;
+      line-height: 1.4;
       pointer-events: none;
     }
 
-    /* QR SCANNER FRAME */
+    /* QR SCANNER */
     #scanner-frame {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 230px;
-      height: 230px;
-      border: 3px solid #3b82f6;
-      border-radius: 20px;
+      width: min(78vw, 360px);
+      height: min(78vw, 360px);
+      border: 5px solid #3b82f6;
+      border-radius: 28px;
       z-index: 10;
       pointer-events: none;
       transition: opacity 0.3s;
@@ -134,28 +136,60 @@
     #scanner-frame::after {
       content: "";
       position: absolute;
-      width: 25px;
-      height: 25px;
+      width: 36px;
+      height: 36px;
       border-color: white;
       border-style: solid;
     }
 
     #scanner-frame::before {
-      top: -4px;
-      left: -4px;
-      border-width: 4px 0 0 4px;
-      border-radius: 10px 0 0 0;
+      top: -5px;
+      left: -5px;
+      border-width: 5px 0 0 5px;
+      border-radius: 12px 0 0 0;
     }
 
     #scanner-frame::after {
-      bottom: -4px;
-      right: -4px;
-      border-width: 0 4px 4px 0;
-      border-radius: 0 0 10px 0;
+      bottom: -5px;
+      right: -5px;
+      border-width: 0 5px 5px 0;
+      border-radius: 0 0 12px 0;
     }
 
     .hidden {
       display: none !important;
+    }
+
+    /* MOBILE */
+    @media (max-width: 600px) {
+      #overlay-screen {
+        padding: 28px;
+      }
+
+      #overlay-screen h2 {
+        font-size: 34px;
+      }
+
+      #overlay-screen p {
+        font-size: 19px;
+      }
+
+      .btn-start {
+        width: min(100%, 340px);
+        padding: 22px 24px;
+        font-size: 19px;
+      }
+
+      #status-toast {
+        bottom: 20px;
+        font-size: 16px;
+        padding: 16px 22px;
+      }
+
+      #scanner-frame {
+        width: min(82vw, 360px);
+        height: min(82vw, 360px);
+      }
     }
   </style>
 
@@ -196,10 +230,7 @@
         );
 
         audioSource.connect(audioAnalyser);
-
-        audioAnalyser.connect(
-          audioContext.destination
-        );
+        audioAnalyser.connect(audioContext.destination);
 
         console.log('Audio initialized');
 
@@ -271,7 +302,6 @@
       }
     });
   </script>
-
 </head>
 
 <body>
@@ -285,7 +315,7 @@
   </video>
 
   <!-- QR SCANNER FRAME -->
-  <div id="scanner-frame" class="hidden"></div>
+  <div id="scanner-frame"></div>
 
   <!-- START SCREEN -->
   <div id="overlay-screen">
@@ -304,9 +334,7 @@
     <button
       class="btn-start"
       id="btn-activate">
-
       ENTER AR SCENE
-
     </button>
 
   </div>
@@ -338,24 +366,22 @@
 
     <!-- ASSETS -->
     <a-assets timeout="15000">
-
       <a-asset-item
         id="avatar-model"
         src="assets/avatar.glb">
       </a-asset-item>
-
     </a-assets>
 
     <!-- CAMERA -->
-    <a-entity camera>
+    <a-entity camera="fov: 60">
 
       <!-- AVATAR -->
       <a-entity
         id="business-avatar"
         gltf-model="#avatar-model"
-        position="0 -0.25 -1.5"
+        position="0 -0.25 -1.2"
         rotation="0 0 0"
-        scale="0.12 0.12 0.12"
+        scale="0.25 0.25 0.25"
         animation-mixer
         web-audio-lipsync
         visible="false">
@@ -401,10 +427,7 @@
     let cameraStarted = false;
     let qrScanning = false;
     let qrDetected = false;
-    let lostFrames = 0;
-    let scanAnimation = null;
-
-    const LOST_FRAME_LIMIT = 12;
+    let sceneActivated = false;
 
     /* STATUS */
     function setStatus(message, color) {
@@ -469,7 +492,6 @@
             await navigator.mediaDevices.getUserMedia({
 
               audio: false,
-
               video: true
 
             });
@@ -531,7 +553,6 @@
 
         if (videoWidth && videoHeight) {
 
-          /* REDUCE IMAGE SIZE FOR PERFORMANCE */
           const scanWidth = Math.min(videoWidth, 640);
 
           const scanHeight = Math.round(
@@ -566,28 +587,22 @@
             }
           );
 
-          if (code) {
+          /* QR CODE DETECTED */
+          if (code && !sceneActivated) {
 
-            lostFrames = 0;
+            qrDetected = true;
+            sceneActivated = true;
 
-            if (!qrDetected) {
-              qrDetected = true;
-              onQRCodeFound(code.data);
-            }
+            onQRCodeFound(code.data);
 
-          } else {
+          }
 
-            if (qrDetected) {
+          /* QR CODE NOT DETECTED */
+          if (!code && qrDetected) {
 
-              lostFrames++;
+            qrDetected = false;
 
-              if (lostFrames > LOST_FRAME_LIMIT) {
-                qrDetected = false;
-                lostFrames = 0;
-                onQRCodeLost();
-              }
-
-            }
+            onQRCodeLost();
 
           }
 
@@ -595,8 +610,7 @@
 
       }
 
-      scanAnimation =
-        requestAnimationFrame(scanQRCode);
+      requestAnimationFrame(scanQRCode);
 
     }
 
@@ -613,10 +627,15 @@
         'rgba(16,185,129,0.95)'
       );
 
+      /* HIDE SCANNER */
       scannerFrame.style.opacity = '0';
 
+      scannerFrame.classList.add('hidden');
+
+      /* SHOW AVATAR */
       avatar.setAttribute('visible', true);
 
+      /* PLAY VOICE */
       playVoice();
 
     }
@@ -624,20 +643,19 @@
     /* QR CODE LOST */
     function onQRCodeLost() {
 
-      console.log('QR code lost');
-
-      setStatus(
-        'Scan your QR code again...',
-        'rgba(0,0,0,0.85)'
+      console.log(
+        'QR code no longer visible. Keeping AR scene active.'
       );
 
-      scannerFrame.style.opacity = '1';
+      /* DO NOT HIDE AVATAR */
+      /* DO NOT STOP AUDIO */
+      /* DO NOT RESET AVATAR */
+      /* DO NOT SHOW SCANNER AGAIN */
 
-      avatar.setAttribute('visible', false);
-
-      audioTrack.pause();
-
-      audioTrack.currentTime = 0;
+      setStatus(
+        'Your AR experience is active!',
+        'rgba(16,185,129,0.95)'
+      );
 
     }
 
@@ -680,10 +698,10 @@
 
       console.log('Voice finished');
 
-      if (qrDetected) {
+      if (sceneActivated) {
 
         setStatus(
-          'QR detected! Scan again or enjoy the avatar.',
+          'Enjoy your interactive avatar!',
           'rgba(16,185,129,0.95)'
         );
 
@@ -708,7 +726,11 @@
 
     /* AVATAR MODEL LOADED */
     avatar.addEventListener('model-loaded', () => {
-      console.log('Avatar model loaded successfully');
+
+      console.log(
+        'Avatar model loaded successfully'
+      );
+
     });
 
     /* AVATAR MODEL ERROR */
@@ -759,7 +781,9 @@
 
     }
 
-    console.log('QR AR Business Experience ready');
+    console.log(
+      'QR AR Business Experience ready'
+    );
 
   </script>
 
