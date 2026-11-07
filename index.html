@@ -4,9 +4,7 @@
 
 <head>
   <meta charset="UTF-8">
-
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>QR AR Business Card - Talking Avatar</title>
 
@@ -20,7 +18,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
   <style>
-
     * {
       box-sizing: border-box;
     }
@@ -36,7 +33,6 @@
     }
 
     /* CAMERA VIDEO BACKGROUND */
-
     #camera-feed {
       position: fixed;
       inset: 0;
@@ -48,7 +44,6 @@
     }
 
     /* AR SCENE */
-
     a-scene {
       position: fixed !important;
       inset: 0;
@@ -60,23 +55,18 @@
     }
 
     /* START SCREEN */
-
     #overlay-screen {
       position: fixed;
       inset: 0;
       z-index: 99999;
-
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-
       padding: 25px;
       text-align: center;
-
       color: white;
       background: rgba(15, 23, 42, 0.97);
-
       transition: opacity 0.5s ease;
     }
 
@@ -96,10 +86,8 @@
       padding: 16px 30px;
       border: none;
       border-radius: 10px;
-
       background: #3b82f6;
       color: white;
-
       font-size: 16px;
       font-weight: bold;
       cursor: pointer;
@@ -110,48 +98,35 @@
     }
 
     /* STATUS MESSAGE */
-
     #status-toast {
       position: fixed;
       bottom: 25px;
       left: 50%;
       transform: translateX(-50%);
-
       z-index: 9999;
-
       width: max-content;
       max-width: 90%;
-
       padding: 13px 20px;
-
       background: rgba(0, 0, 0, 0.85);
       color: white;
-
       border-radius: 30px;
-
       text-align: center;
       font-size: 13px;
       pointer-events: none;
     }
 
     /* QR SCANNER FRAME */
-
     #scanner-frame {
       position: fixed;
       top: 50%;
       left: 50%;
-
       transform: translate(-50%, -50%);
-
       width: 230px;
       height: 230px;
-
       border: 3px solid #3b82f6;
       border-radius: 20px;
-
       z-index: 10;
       pointer-events: none;
-
       transition: opacity 0.3s;
     }
 
@@ -182,24 +157,19 @@
     .hidden {
       display: none !important;
     }
-
   </style>
 
   <!-- AUDIO AND LIP SYNC -->
-
   <script>
-
     let audioContext = null;
     let audioAnalyser = null;
     let audioSource = null;
     let audioData = null;
 
     function initializeAudio() {
-
       if (audioContext) return;
 
-      const audio =
-        document.getElementById('voice-audio');
+      const audio = document.getElementById('voice-audio');
 
       const AudioContextClass =
         window.AudioContext ||
@@ -211,7 +181,6 @@
       }
 
       try {
-
         audioContext = new AudioContextClass();
 
         audioSource =
@@ -235,52 +204,39 @@
         console.log('Audio initialized');
 
       } catch (error) {
-
         console.error('Audio initialization error:', error);
-
       }
     }
 
     /* LIP SYNC COMPONENT */
-
     AFRAME.registerComponent('web-audio-lipsync', {
 
       init: function () {
-
         this.mouthMeshes = [];
 
         this.el.addEventListener('model-loaded', () => {
-
-          const model =
-            this.el.getObject3D('mesh');
+          const model = this.el.getObject3D('mesh');
 
           if (!model) return;
 
           model.traverse((node) => {
-
             if (
               node.isMesh &&
               node.morphTargetInfluences &&
               node.morphTargetDictionary
             ) {
-
               this.mouthMeshes.push(node);
-
             }
-
           });
 
           console.log(
             'Lip sync meshes:',
             this.mouthMeshes.length
           );
-
         });
-
       },
 
       tick: function () {
-
         if (
           !audioAnalyser ||
           !audioData ||
@@ -301,28 +257,19 @@
         );
 
         this.mouthMeshes.forEach((mesh) => {
-
-          const dict =
-            mesh.morphTargetDictionary;
-
-          const influences =
-            mesh.morphTargetInfluences;
+          const dict = mesh.morphTargetDictionary;
+          const influences = mesh.morphTargetInfluences;
 
           if (dict.jawOpen !== undefined) {
             influences[dict.jawOpen] = volume;
           }
 
           if (dict.mouthOpen !== undefined) {
-            influences[dict.mouthOpen] =
-              volume * 0.8;
+            influences[dict.mouthOpen] = volume * 0.8;
           }
-
         });
-
       }
-
     });
-
   </script>
 
 </head>
@@ -330,7 +277,6 @@
 <body>
 
   <!-- CAMERA VIDEO -->
-
   <video
     id="camera-feed"
     autoplay
@@ -339,11 +285,9 @@
   </video>
 
   <!-- QR SCANNER FRAME -->
-
   <div id="scanner-frame" class="hidden"></div>
 
   <!-- START SCREEN -->
-
   <div id="overlay-screen">
 
     <h2>AR Business Experience</h2>
@@ -368,13 +312,11 @@
   </div>
 
   <!-- STATUS -->
-
   <div id="status-toast">
     Waiting for camera...
   </div>
 
   <!-- AUDIO -->
-
   <audio
     id="voice-audio"
     src="assets/voice.mp3"
@@ -383,24 +325,18 @@
   </audio>
 
   <!-- QR SCAN CANVAS -->
-
   <canvas id="qr-canvas" hidden></canvas>
 
   <!-- AR SCENE -->
-
   <a-scene
-
     embedded
-
     vr-mode-ui="enabled: false"
-
     renderer="
       antialias: true;
       alpha: true;
     ">
 
     <!-- ASSETS -->
-
     <a-assets timeout="15000">
 
       <a-asset-item
@@ -411,29 +347,18 @@
     </a-assets>
 
     <!-- CAMERA -->
-
     <a-entity camera>
 
       <!-- AVATAR -->
-
       <a-entity
-
         id="business-avatar"
-
         gltf-model="#avatar-model"
-
         position="0 -0.25 -1.5"
-
         rotation="0 0 0"
-
         scale="0.12 0.12 0.12"
-
         animation-mixer
-
         web-audio-lipsync
-
         visible="false">
-
       </a-entity>
 
     </a-entity>
@@ -441,7 +366,6 @@
   </a-scene>
 
   <!-- APPLICATION -->
-
   <script>
 
     const overlay =
@@ -474,32 +398,23 @@
       });
 
     let cameraStream = null;
-
     let cameraStarted = false;
-
     let qrScanning = false;
-
     let qrDetected = false;
-
     let lostFrames = 0;
-
     let scanAnimation = null;
 
     const LOST_FRAME_LIMIT = 12;
 
     /* STATUS */
-
     function setStatus(message, color) {
-
       statusToast.textContent = message;
 
       statusToast.style.background =
         color || 'rgba(0,0,0,0.85)';
-
     }
 
     /* START CAMERA */
-
     startButton.addEventListener('click', async () => {
 
       if (cameraStarted) return;
@@ -520,7 +435,6 @@
         }
 
         /* REQUEST REAR CAMERA */
-
         try {
 
           cameraStream =
@@ -540,7 +454,6 @@
                 height: {
                   ideal: 720
                 }
-
               }
 
             });
@@ -572,9 +485,7 @@
         overlay.style.opacity = '0';
 
         setTimeout(() => {
-
           overlay.classList.add('hidden');
-
         }, 500);
 
         scannerFrame.classList.remove('hidden');
@@ -606,7 +517,6 @@
     });
 
     /* QR CODE SCANNER */
-
     function scanQRCode() {
 
       if (!qrScanning) return;
@@ -622,7 +532,6 @@
         if (videoWidth && videoHeight) {
 
           /* REDUCE IMAGE SIZE FOR PERFORMANCE */
-
           const scanWidth = Math.min(videoWidth, 640);
 
           const scanHeight = Math.round(
@@ -662,11 +571,8 @@
             lostFrames = 0;
 
             if (!qrDetected) {
-
               qrDetected = true;
-
               onQRCodeFound(code.data);
-
             }
 
           } else {
@@ -676,13 +582,9 @@
               lostFrames++;
 
               if (lostFrames > LOST_FRAME_LIMIT) {
-
                 qrDetected = false;
-
                 lostFrames = 0;
-
                 onQRCodeLost();
-
               }
 
             }
@@ -699,7 +601,6 @@
     }
 
     /* QR CODE FOUND */
-
     function onQRCodeFound(qrContent) {
 
       console.log(
@@ -721,7 +622,6 @@
     }
 
     /* QR CODE LOST */
-
     function onQRCodeLost() {
 
       console.log('QR code lost');
@@ -742,7 +642,6 @@
     }
 
     /* PLAY VOICE */
-
     async function playVoice() {
 
       try {
@@ -751,9 +650,7 @@
           audioContext &&
           audioContext.state === 'suspended'
         ) {
-
           await audioContext.resume();
-
         }
 
         audioTrack.currentTime = 0;
@@ -779,7 +676,6 @@
     }
 
     /* AUDIO ENDED */
-
     audioTrack.addEventListener('ended', () => {
 
       console.log('Voice finished');
@@ -796,7 +692,6 @@
     });
 
     /* AUDIO ERROR */
-
     audioTrack.addEventListener('error', () => {
 
       console.error(
@@ -812,15 +707,11 @@
     });
 
     /* AVATAR MODEL LOADED */
-
     avatar.addEventListener('model-loaded', () => {
-
       console.log('Avatar model loaded successfully');
-
     });
 
     /* AVATAR MODEL ERROR */
-
     avatar.addEventListener('model-error', (event) => {
 
       console.error(
@@ -836,7 +727,6 @@
     });
 
     /* ENVIRONMENT DIAGNOSTICS */
-
     console.log(
       'A-Frame version:',
       AFRAME.version
@@ -874,5 +764,4 @@
   </script>
 
 </body>
-
 </html>
