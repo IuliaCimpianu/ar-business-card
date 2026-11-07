@@ -4,16 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
 
   <title>QR AR Business Experience</title>
 
-  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-
-  <!-- MindAR Image Tracking -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
-  <!-- GLB Animations -->
   <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
 
   <style>
@@ -27,16 +23,23 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #000;
+      background: transparent;
       font-family: Arial, sans-serif;
     }
 
+    /* Keep the AR scene transparent */
     a-scene {
       position: fixed !important;
-      inset: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      background: transparent !important;
       z-index: 1;
+    }
+
+    a-scene canvas,
+    canvas.a-canvas {
+      background: transparent !important;
     }
 
     #overlay-screen {
@@ -133,9 +136,7 @@
   </style>
 
   <script>
-    // ==========================================
     // AUDIO AND LIP SYNC
-    // ==========================================
 
     let audioContext = null;
     let audioAnalyser = null;
@@ -158,9 +159,7 @@
         audioSource =
           audioContext.createMediaElementSource(audio);
 
-        audioAnalyser =
-          audioContext.createAnalyser();
-
+        audioAnalyser = audioContext.createAnalyser();
         audioAnalyser.fftSize = 64;
 
         audioData = new Uint8Array(
@@ -175,24 +174,19 @@
       }
     }
 
-    // ==========================================
-    // AVATAR LIP SYNC COMPONENT
-    // ==========================================
+    // AVATAR LIP SYNC
 
     AFRAME.registerComponent("web-audio-lipsync", {
 
       init: function () {
-
         this.mouthMeshes = [];
 
         this.el.addEventListener("model-loaded", () => {
-
           const model = this.el.getObject3D("mesh");
 
           if (!model) return;
 
           model.traverse(node => {
-
             if (
               node.isMesh &&
               node.morphTargetInfluences &&
@@ -200,27 +194,18 @@
             ) {
               this.mouthMeshes.push(node);
             }
-
           });
 
-          console.log(
-            "Lip sync meshes:",
-            this.mouthMeshes.length
-          );
-
+          console.log("Lip sync meshes:", this.mouthMeshes.length);
         });
-
       },
 
       tick: function () {
-
         if (
           !audioAnalyser ||
           !audioData ||
           !this.mouthMeshes.length
-        ) {
-          return;
-        }
+        ) return;
 
         audioAnalyser.getByteFrequencyData(audioData);
 
@@ -236,7 +221,6 @@
         );
 
         this.mouthMeshes.forEach(mesh => {
-
           const dictionary = mesh.morphTargetDictionary;
           const influences = mesh.morphTargetInfluences;
 
@@ -247,24 +231,17 @@
           if (dictionary.mouthOpen !== undefined) {
             influences[dictionary.mouthOpen] = volume * 0.8;
           }
-
         });
-
       }
-
     });
   </script>
-
 </head>
 
 <body>
 
-  <!-- ======================================
-       START SCREEN
-  ======================================= -->
+  <!-- START SCREEN -->
 
   <div id="overlay-screen">
-
     <h1>AR Business Experience</h1>
 
     <p>
@@ -276,16 +253,11 @@
     <button class="btn-start" id="btn-activate">
       ENTER AR EXPERIENCE
     </button>
-
   </div>
-
-  <!-- STATUS MESSAGE -->
 
   <div id="status-toast">
     Ready to start your AR experience
   </div>
-
-  <!-- AUDIO -->
 
   <audio
     id="voice-audio"
@@ -294,10 +266,7 @@
     playsinline>
   </audio>
 
-
-  <!-- ======================================
-       MINDAR AR SCENE
-  ======================================= -->
+  <!-- MINDAR SCENE -->
 
   <a-scene
     id="ar-scene"
@@ -319,71 +288,50 @@
       physicallyCorrectLights: true;
       antialias: true;
       alpha: true;
+      precision: medium;
     "
 
     vr-mode-ui="enabled: false"
-
     device-orientation-permission-ui="enabled: false"
   >
 
     <a-assets timeout="15000">
-
       <a-asset-item
         id="avatar-model"
         src="assets/avatar.glb">
       </a-asset-item>
-
     </a-assets>
 
-
-    <!-- QR CODE TRACKING TARGET -->
+    <!-- QR TRACKING TARGET -->
 
     <a-entity
       id="qr-anchor"
       mindar-image-target="targetIndex: 0"
     >
 
-      <!-- AVATAR -->
-
       <a-entity
         id="business-avatar"
-
         gltf-model="#avatar-model"
-
         position="0 0.35 0.1"
-
         rotation="0 0 0"
-
         scale="0.25 0.25 0.25"
-
         animation-mixer
-
         web-audio-lipsync
-
-        visible="true"
-      >
+        visible="true">
       </a-entity>
 
     </a-entity>
-
 
     <!-- CAMERA -->
 
     <a-camera
       position="0 0 0"
-      look-controls="enabled: false"
-    >
+      look-controls="enabled: false">
     </a-camera>
 
   </a-scene>
 
-
-  <!-- ======================================
-       JAVASCRIPT
-  ======================================= -->
-
   <script>
-
     const overlay =
       document.getElementById("overlay-screen");
 
@@ -405,48 +353,40 @@
     const avatar =
       document.getElementById("business-avatar");
 
-
     let sceneStarted = false;
     let voicePlayed = false;
 
-
-    // ======================================
-    // STATUS MESSAGE
-    // ======================================
-
     function setStatus(message, color) {
-
       statusToast.textContent = message;
-
       statusToast.style.background =
         color || "rgba(0,0,0,0.85)";
-
     }
 
-
-    // ======================================
-    // START AR CAMERA
-    // ======================================
+    // START CAMERA
 
     startButton.addEventListener("click", async () => {
-
       if (sceneStarted) return;
 
       startButton.disabled = true;
-
       startButton.textContent = "STARTING CAMERA...";
 
       setStatus("Requesting camera access...");
 
       try {
-
         initializeAudio();
 
         if (audioContext) {
           await audioContext.resume();
         }
 
-        await scene.systems["mindar-image-system"].start();
+        const mindarSystem =
+          scene.systems["mindar-image-system"];
+
+        if (!mindarSystem) {
+          throw new Error("MindAR system not initialized.");
+        }
+
+        await mindarSystem.start();
 
         sceneStarted = true;
 
@@ -462,29 +402,21 @@
         );
 
       } catch (error) {
-
         console.error("AR startup error:", error);
 
         setStatus(
-          "Unable to start camera. Check permissions and HTTPS.",
+          "Camera failed. Check permissions and HTTPS.",
           "rgba(220,38,38,0.95)"
         );
 
         startButton.disabled = false;
-
         startButton.textContent = "TRY AGAIN";
-
       }
-
     });
 
-
-    // ======================================
-    // QR CODE FOUND
-    // ======================================
+    // QR FOUND
 
     anchor.addEventListener("targetFound", () => {
-
       console.log("QR tracking started");
 
       setStatus(
@@ -494,36 +426,20 @@
 
       avatar.setAttribute("visible", true);
 
-      // Play the introduction once.
       if (!voicePlayed) {
-
         voicePlayed = true;
-
         playVoice();
-
       }
-
     });
 
-
-    // ======================================
-    // QR CODE LOST
-    // ======================================
+    // QR LOST
 
     anchor.addEventListener("targetLost", () => {
-
       console.log("QR tracking temporarily lost");
 
-      /*
-        Keep the avatar visible.
-
-        The last tracked position is retained as far
-        as the tracking system allows.
-
-        This is not true world-locked tracking:
-        without seeing the marker, the camera cannot
-        reliably update its physical position.
-      */
+      // Keep the avatar visible.
+      // Its position cannot be reliably updated
+      // while the marker is no longer tracked.
 
       avatar.setAttribute("visible", true);
 
@@ -531,18 +447,12 @@
         "AR experience active",
         "rgba(16,185,129,0.95)"
       );
-
     });
 
-
-    // ======================================
-    // PLAY AVATAR VOICE
-    // ======================================
+    // PLAY VOICE
 
     async function playVoice() {
-
       try {
-
         if (
           audioContext &&
           audioContext.state === "suspended"
@@ -551,90 +461,66 @@
         }
 
         audioTrack.currentTime = 0;
-
         await audioTrack.play();
 
         console.log("Avatar voice playing");
 
       } catch (error) {
-
         console.error("Audio playback error:", error);
 
         setStatus(
           "Audio playback failed. Check voice.mp3.",
           "rgba(220,38,38,0.95)"
         );
-
       }
-
     }
 
-
-    // ======================================
-    // AUDIO EVENTS
-    // ======================================
-
     audioTrack.addEventListener("ended", () => {
-
-      console.log("Voice finished");
-
       setStatus(
         "Enjoy your interactive avatar!",
         "rgba(16,185,129,0.95)"
       );
-
     });
 
-
     audioTrack.addEventListener("error", () => {
-
       console.error("Unable to load voice.mp3");
 
       setStatus(
         "Unable to load voice.mp3.",
         "rgba(220,38,38,0.95)"
       );
-
     });
 
-
-    // ======================================
     // MODEL EVENTS
-    // ======================================
 
     avatar.addEventListener("model-loaded", () => {
-
       console.log("Avatar loaded successfully");
-
     });
 
-
     avatar.addEventListener("model-error", event => {
-
       console.error("Avatar loading error:", event);
 
       setStatus(
         "Unable to load avatar.glb.",
         "rgba(220,38,38,0.95)"
       );
-
     });
 
-
-    // ======================================
     // DEBUGGING
-    // ======================================
 
-    console.log("A-Frame version:", AFRAME.version);
-
-    console.log("MindAR available:",
-      !!scene.systems["mindar-image-system"]
+    scene.addEventListener(
+      "arReady",
+      () => console.log("MindAR is ready")
     );
 
+    scene.addEventListener(
+      "arError",
+      event => console.error("MindAR error:", event)
+    );
+
+    console.log("A-Frame:", AFRAME.version);
     console.log("Secure context:", window.isSecureContext);
-
-    console.log("AR Business Experience ready"); 
-
+    console.log("AR Business Experience ready");
   </script>
 
 </body>
