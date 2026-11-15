@@ -302,6 +302,10 @@
       uiScanning: no;
       uiLoading: no;
       uiError: no;
+      filterMinCF: 0.0005;
+      filterBeta: 1000;
+      warmupTolerance: 5;
+      missTolerance: 10;
     "
 
     embedded
@@ -334,14 +338,14 @@
       mindar-image-target="targetIndex: 0"
     >
 
-      <!-- AVATAR - 10 TIMES BIGGER -->
+      <!-- AVATAR -->
 
       <a-entity
         id="business-avatar"
         gltf-model="#avatar-model"
         position="0 0.35 0.1"
         rotation="0 0 0"
-        scale="2.5 2.5 2.5"
+        scale="0.83 0.83 0.83"
         animation-mixer
         web-audio-lipsync
         visible="true">
