@@ -33,7 +33,6 @@ function loop(now){if(!running)return;requestAnimationFrame(loop);const W=innerW
  if(video.readyState>=2 && now-lastScan>65){lastScan=now;const vw=video.videoWidth,vh=video.videoHeight;const sw=640,sh=Math.round(sw*vh/vw);scanCanvas.width=sw;scanCanvas.height=sh;ctx.drawImage(video,0,0,sw,sh);const data=ctx.getImageData(0,0,sw,sh);const result=jsQR(data.data,sw,sh,{inversionAttempts:'dontInvert'});
  if(result){const pose=poseFromCorners(result.location,sw,sh);if(pose){targetPosition.copy(pose.position);targetQuaternion.copy(pose.quaternion);lastSeen=now;detectCount++;if(!hasPose){cube.position.copy(targetPosition);cube.quaternion.copy(targetQuaternion);hasPose=true}status.textContent='QR detected · frames: '+detectCount}}}
  if(now-lastSeen>250){hasPose=false;cube.visible=false;status.textContent='Searching for QR…'}
- }
  if(hasPose){cube.visible=true;cube.position.lerp(targetPosition,.42);cube.quaternion.slerp(targetQuaternion,.42);const outward=new THREE.Vector3(0,0,.016).applyQuaternion(cube.quaternion);cube.position.add(outward)}
  renderer.render(scene,camera);
 }
